@@ -1,0 +1,141 @@
+@import url("https://fonts.googleapis.com/css2?family=Sora:wght@100..800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  scroll-behavior: smooth;
+  cursor: none;
+}
+
+body {
+  overflow-x: hidden;
+  font-family: "Sora", sans-serif;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  cursor: none;
+  position: relative;
+  background-color: black;
+  color: white;
+  scroll-behavior: smooth;
+}
+
+a,
+button,
+input,
+textarea,
+select {
+  cursor: none;
+}
+
+section {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+.panel {
+  width: 100%;
+  height: 100vh;
+}
+
+.pin-spacer {
+  height: 200vh;
+}
+
+.text-glow-purple {
+  color: white;
+  text-shadow:
+    0 0 8px rgba(200, 0, 255, 0.7),
+    0 0 20px rgba(200, 0, 255, 0.5),
+    0 0 30px rgba(200, 0, 255, 0.3);
+}
+
+.glass-effect {
+  background: rgba(92, 92, 92, 0.19);
+  border-radius: 16px;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(9.3px);
+  -webkit-backdrop-filter: blur(9.3px);
+  border: 1px solid rgba(92, 92, 92, 0.82);
+}
+
+/* Show default cursor on mobile */
+@media (max-width: 768px) {
+  html,
+  body,
+  a,
+  button,
+  input,
+  textarea,
+  select {
+    cursor: auto;
+  }
+}
+
+/* Responsive text sizing */
+@media (max-width: 640px) {
+  h1 {
+    font-size: 2.5rem !important;
+  }
+
+  h2 {
+    font-size: 2rem !important;
+  }
+
+  p {
+    font-size: 1rem !important;
+  }
+
+  .panel-title {
+    font-size: 2rem !important;
+  }
+
+  .panel-desc {
+    font-size: 1rem !important;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@keyframes flicker {
+  0% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+}
+
+.hero-font {
+  font-family: "Space Grotesk", sans-serif;
+}
+
+.stroke-purple {
+  -webkit-text-stroke: 1.5px #a855f7;
+}
+
+.stroke-white {
+  -webkit-text-stroke: 1.5px white;
+}
+
+.img-filter {
+  mix-blend-mode: lighten;
+}
