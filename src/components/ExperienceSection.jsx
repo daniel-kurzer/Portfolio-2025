@@ -6,6 +6,7 @@ import Spline from "@splinetool/react-spline";
 const ExperienceSection = () => {
   const sectionRef = useRef(null);
   const titleRef = useRef(null);
+  const titleLineRef = useRef(null);
   const contentRef = useRef(null);
   const professionalExperienceRef = useRef(null);
   const educationRef = useRef(null);
@@ -13,6 +14,9 @@ const ExperienceSection = () => {
   const educationItemsRef = useRef([]);
   const splineRef = useRef(null); // Ref for the Spline component container
   const splineContainerRef = useRef(null); // New ref for the div wrapping Spline
+
+  // NEU: useRef für die Sammlung aller ScrollTrigger-Instanzen dieser Komponente
+  const createdTriggersRef = useRef([]);
 
   const experiences = [
     {
@@ -66,161 +70,240 @@ const ExperienceSection = () => {
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
 
-    // Create copies of ref values that remain constant within the effect
+    let animationInitTimeoutId; // Zum Speichern des Initialisierungs-Timeouts
+    let cleanupTimeoutId; // Für den Cleanup-Timeout
+
+    // Erstelle Kopien der Ref-Werte, die innerhalb des Effekts konstant bleiben
     const currentSectionNode = sectionRef.current;
     const currentTitleNode = titleRef.current;
+    const currentTitleLineNode = titleLineRef.current;
     const currentContentNode = contentRef.current;
     const currentProfessionalExperienceNode = professionalExperienceRef.current;
     const currentEducationNode = educationRef.current;
-    const currentExperienceItems = experienceItemsRef.current; // Copy of the array
-    const currentEducationItems = educationItemsRef.current; // Copy of the array
-    const currentSplineNode = splineRef.current; // Copy of the Spline ref
-    const currentSplineContainerNode = splineContainerRef.current; // Copy of the Spline container ref
+    const currentSplineContainerNode = splineContainerRef.current;
+    const currentExperienceItems = experienceItemsRef.current; // Kopie der Array-Ref
+    const currentEducationItems = educationItemsRef.current; // Kopie der Array-Ref
 
-    // Title Animation
-    gsap.fromTo(
-      currentTitleNode,
-      { y: 100, opacity: 0 },
-      {
-        y: 0,
-        opacity: 1,
-        duration: 0.8,
-        scrollTrigger: {
-          trigger: currentSectionNode,
-          start: "top 40%",
-          toggleActions: "play none none reverse",
-        },
+    // Funktion zur Initialisierung der GSAP-Animationen
+    const initializeGsapAnimation = () => {
+      // Sicherstellen, dass alle benötigten DOM-Refs existieren
+      if (!currentSectionNode || !currentTitleNode || !currentTitleLineNode || !currentContentNode || 
+          !currentProfessionalExperienceNode || !currentEducationNode || !currentSplineContainerNode) {
+        console.warn("ExperienceSection: Einige DOM-Refs fehlen. GSAP-Initialisierung übersprungen.");
+        return;
       }
-    );
 
-    // Content (image + text) Animation - using a single trigger for the whole block
-    gsap.fromTo(
-      currentContentNode,
-      { y: 100, opacity: 0, filter: "blur(10px)" },
-      {
-        y: 0,
-        opacity: 1,
-        filter: "blur(0px)",
-        duration: 1.5,
-        scrollTrigger: {
-          trigger: currentSectionNode,
-          start: "top 40%",
-          toggleActions: "play none none reverse",
-        },
+      // Vermeiden Sie die Re-Initialisierung, wenn bereits eine Instanz existiert UND sie noch aktiv ist
+      // Dies ist wichtig, um StrictMode-Doppelläufe zu handhaben
+      if (createdTriggersRef.current.length > 0 && createdTriggersRef.current[0].isActive) {
+        console.log("ExperienceSection: ScrollTriggers bereits initialisiert und aktiv, überspringe Re-Initialisierung.");
+        return;
       }
-    );
 
-    // Professional Experience section header animation
-    gsap.fromTo(
-      currentProfessionalExperienceNode,
-      { y: 50, opacity: 0, filter: "blur(5px)" },
-      {
-        y: 0,
-        opacity: 1,
-        filter: "blur(0px)",
-        duration: 1,
-        delay: 0.5,
-        scrollTrigger: {
-          trigger: currentProfessionalExperienceNode,
-          start: "top 80%",
-          toggleActions: "play none none reverse",
-        },
-      }
-    );
+      console.log("ExperienceSection: Starte GSAP-Animation Initialisierung.");
 
-    // Individual Experience items animation
-    currentExperienceItems.forEach((item, index) => {
-      gsap.fromTo(
-        item,
-        { x: -50, opacity: 0 },
-        {
-          x: 0,
-          opacity: 1,
-          duration: 0.6,
-          delay: 0.7 + index * 0.1,
-          scrollTrigger: {
-            trigger: item,
-            start: "top 85%",
-            toggleActions: "play none none reverse",
-          },
-        }
+      // Leere das Array der erstellten Trigger bei jedem neuen Effekt-Lauf (wichtig für StrictMode)
+      createdTriggersRef.current = [];
+
+      // Title Animation
+      createdTriggersRef.current.push(
+        gsap.fromTo(
+          currentTitleNode,
+          { y: 100, opacity: 0 },
+          {
+            y: 0,
+            opacity: 1,
+            duration: 0.8,
+            scrollTrigger: {
+              trigger: currentSectionNode,
+              start: "top 40%",
+              toggleActions: "play none none reverse",
+            },
+          }
+        )
       );
-    });
 
-    // Education section header animation - Start at the same point as content, but with delay
-    gsap.fromTo(
-      currentEducationNode,
-      { y: 50, opacity: 0, filter: "blur(5px)" },
-      {
-        y: 0,
-        opacity: 1,
-        filter: "blur(0px)",
-        duration: 1,
-        delay: 1.2,
-        scrollTrigger: {
-          trigger: currentProfessionalExperienceNode,
-          start: "top 80%",
-          toggleActions: "play none none reverse",
-        },
-      }
-    );
-
-    // Individual Education items animation - Start at the same point as content, but with delay
-    currentEducationItems.forEach((item, index) => {
-      gsap.fromTo(
-        item,
-        { x: -50, opacity: 0 },
-        {
-          x: 0,
-          opacity: 1,
-          duration: 0.6,
-          delay: 1.4 + index * 0.1,
-          scrollTrigger: {
-            trigger: currentProfessionalExperienceNode,
-            start: "top 85%",
-            toggleActions: "play none none reverse",
-          },
-        }
+      // Title Line Animation
+      createdTriggersRef.current.push(
+        gsap.fromTo(
+          currentTitleLineNode,
+          { width: "0%", opacity: 0 },
+          {
+            width: "100%",
+            opacity: 1,
+            duration: 1.5,
+            ease: "power3.inOut",
+            delay: 0.3,
+            scrollTrigger: {
+              trigger: currentSectionNode,
+              start: "top 80%",
+              toggleActions: "play none none reverse",
+            },
+          }
+        )
       );
-    });
 
-    // Optional: Individual animation for the Spline container
-    // If you want the Spline model to have a different animation than the overall contentRef
-    gsap.fromTo(
-       currentSplineContainerNode,
-       { x: -400, opacity: 0 },
-       {
-         x: 0,
-         opacity: 1,
-         duration: 1.5,
-         delay: 0.5, // Start after the section title appears
-         scrollTrigger: {
-           trigger: currentSectionNode,
-           start: "top 40%",
-           toggleActions: "play none none reverse",
-         },
-       }
-     );
+      // Content (image + text) Animation - using a single trigger for the whole block
+      createdTriggersRef.current.push(
+        gsap.fromTo(
+          currentContentNode,
+          { y: 100, opacity: 0, filter: "blur(10px)" },
+          {
+            y: 0,
+            opacity: 1,
+            filter: "blur(0px)",
+            duration: 1.5,
+            scrollTrigger: {
+              trigger: currentSectionNode,
+              start: "top 40%",
+              toggleActions: "play none none reverse",
+            },
+          }
+        )
+      );
 
+      // Professional Experience section header animation
+      createdTriggersRef.current.push(
+        gsap.fromTo(
+          currentProfessionalExperienceNode,
+          { y: 50, opacity: 0, filter: "blur(5px)" },
+          {
+            y: 0,
+            opacity: 1,
+            filter: "blur(0px)",
+            duration: 1,
+            delay: 0.5,
+            scrollTrigger: {
+              trigger: currentProfessionalExperienceNode,
+              start: "top 80%",
+              toggleActions: "play none none reverse",
+            },
+          }
+        )
+      );
 
-    return () => {
-      // Use local copies of ref values in the cleanup function
-      ScrollTrigger.getAll().forEach((trigger) => {
-        if (
-          trigger.vars.trigger === currentSectionNode ||
-          trigger.vars.trigger === currentContentNode ||
-          trigger.vars.trigger === currentProfessionalExperienceNode ||
-          trigger.vars.trigger === currentEducationNode ||
-          currentExperienceItems.includes(trigger.trigger) ||
-          currentEducationItems.includes(trigger.trigger) ||
-          trigger.vars.trigger === currentSplineNode || // Include Spline node in cleanup
-          trigger.vars.trigger === currentSplineContainerNode // Include Spline container in cleanup
-        ) {
-          trigger.kill();
+      // Individual Experience items animation
+      currentExperienceItems.forEach((item, index) => {
+        if (item) {
+          createdTriggersRef.current.push(
+            gsap.fromTo(
+              item,
+              { x: -50, opacity: 0 },
+              {
+                x: 0,
+                opacity: 1,
+                duration: 0.6,
+                delay: 0.7 + index * 0.1,
+                scrollTrigger: {
+                  trigger: item,
+                  start: "top 85%",
+                  toggleActions: "play none none reverse",
+                },
+              }
+            )
+          );
         }
       });
+
+      // Education section header animation - Start at the same point as content, but with delay
+      createdTriggersRef.current.push(
+        gsap.fromTo(
+          currentEducationNode,
+          { y: 50, opacity: 0, filter: "blur(5px)" },
+          {
+            y: 0,
+            opacity: 1,
+            filter: "blur(0px)",
+            duration: 1,
+            delay: 1.2,
+            scrollTrigger: {
+              trigger: currentProfessionalExperienceNode, // Trigger bleibt hier erhalten
+              start: "top 80%",
+              toggleActions: "play none none reverse",
+            },
+          }
+        )
+      );
+
+      // Individual Education items animation - Start at the same point as content, but with delay
+      currentEducationItems.forEach((item, index) => {
+        if (item) {
+          createdTriggersRef.current.push(
+            gsap.fromTo(
+              item,
+              { x: -50, opacity: 0 },
+              {
+                x: 0,
+                opacity: 1,
+                duration: 0.6,
+                delay: 1.4 + index * 0.1,
+                scrollTrigger: {
+                  trigger: currentProfessionalExperienceNode, // Trigger bleibt hier erhalten
+                  start: "top 85%",
+                  toggleActions: "play none none reverse",
+                },
+              }
+            )
+          );
+        }
+      });
+
+      // Optional: Individual animation for the Spline container
+      createdTriggersRef.current.push(
+        gsap.fromTo(
+          currentSplineContainerNode,
+          { x: -400, opacity: 0 },
+          {
+            x: 0,
+            opacity: 1,
+            duration: 1.5,
+            delay: 0.5, // Start after the section title appears
+            scrollTrigger: {
+              trigger: currentSectionNode,
+              start: "top 40%",
+              toggleActions: "play none none reverse",
+            },
+          }
+        )
+      );
+
+      // Initialisiere ScrollTrigger.refresh() nach dem Laden aller Bilder
+      ScrollTrigger.refresh();
     };
-  }, []);
+
+    // Initialisiere die Animation verzögert, um den React Strict Mode initialen Mount/Unmount/Re-Mount-Zyklus zu überleben.
+    animationInitTimeoutId = setTimeout(initializeGsapAnimation, 200);
+
+    // Cleanup-Funktion
+    return () => {
+      console.log("--- ExperienceSection Cleanup START ---");
+      console.log("ExperienceSection: Anzahl der zu killenden Trigger:", createdTriggersRef.current.length);
+
+      clearTimeout(animationInitTimeoutId); // Den Initialisierungs-Timeout clearen, falls er noch nicht ausgelöst wurde
+
+      cleanupTimeoutId = setTimeout(() => {
+        createdTriggersRef.current.forEach((tween) => {
+          if (tween) { // Sicherstellen, dass der Tween existiert
+            if (tween.scrollTrigger) { // Prüfen, ob ein assoziierter ScrollTrigger existiert
+              console.log("ExperienceSection: Killing specific ScrollTrigger:", tween.scrollTrigger);
+              // ExperienceSection hat keine gepinnten Elemente, daher kein disable(true)
+              // Die isActive Prüfung wurde entfernt, um den Kill-Befehl immer auszuführen
+              tween.scrollTrigger.kill(); // Killt nur den ScrollTrigger
+            }
+            // Dann killen wir den Tween selbst
+            tween.kill(); 
+          } else {
+            console.log("ExperienceSection: Tween ist null, überspringe Kill.");
+          }
+        });
+        createdTriggersRef.current = []; // Array leeren
+        // ScrollTrigger.refresh(); // ENTFERNT: Dies könnte die Race Condition verschärfen
+        console.log("--- ExperienceSection Cleanup ENDE --- (nach Timeout)");
+      }, 200); // Timeout von 200ms beibehalten
+
+      return () => clearTimeout(cleanupTimeoutId); // Timeout beim Unmount clearen
+    };
+  }, []); // Leeres Dependency Array, da alle Referenzen außerhalb des Renders kopiert werden
 
   const addExperienceRef = (el) => {
     if (el && !experienceItemsRef.current.includes(el)) {
@@ -238,15 +321,19 @@ const ExperienceSection = () => {
     <section
       ref={sectionRef}
       id="experience"
-      className="w-full relative overflow-hidden bg-gradient-to-b from-black to-[#9a74cf50] flex flex-col justify-center items-center z-10 pt-16 md:pt-5 text-white"
+      className="w-full relative overflow-hidden bg-gradient-to-b from-violet-900 to-black flex flex-col justify-center items-center z-10 pt-16 md:pt-5 text-white"
     >
       <div className="container mx-auto px-4 h-full flex flex-col items-center justify-center relative z-10">
         <h2
           ref={titleRef}
-          className="text-4xl md:text-6xl font-bold mt-8 lg:mt-0 mb-8 md:mb-16 text-center text-purple-200 opacity-0"
+          className="text-4xl md:text-6xl font-bold mt-8 lg:mt-0 mb-4 md:mb-2 text-center text-purple-200 opacity-0"
         >
           Experience & Education
         </h2>
+        <div
+          ref={titleLineRef}
+          className="w-0 h-1 bg-gradient-to-r from-purple-500 to-pink-500 mx-auto opacity-0 mb-12 md:mb-28"
+        ></div>
 
         <div
           ref={contentRef}
@@ -260,7 +347,7 @@ const ExperienceSection = () => {
             <Spline
               ref={splineRef}
               className="absolute inset-0 w-full h-full"
-              scene="https://prod.spline.design/U6K-tT1B8WaDHTJY/scene.splinecode"
+              scene="https://prod.spline.design/V7Te0VDbWPZ-JJ5m/scene.splinecode"
             />
           </div>
 
@@ -272,6 +359,7 @@ const ExperienceSection = () => {
             >
               Professional experience
             </h3>
+
             {experiences.map(
               ({ role, company, duration, description, skills }, i) => (
                 <div

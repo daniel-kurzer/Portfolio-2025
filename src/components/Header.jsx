@@ -3,6 +3,7 @@ import { FiGithub, FiLinkedin, FiMenu, FiX } from "react-icons/fi";
 import { FaXTwitter } from "react-icons/fa6";
 import { useState, useRef, useEffect } from "react";
 import emailjs from "@emailjs/browser";
+import { Link } from "react-router-dom"; // <-- Importiere Link von react-router-dom
 
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -15,9 +16,9 @@ const Header = () => {
   const cursorRef = useRef(null);
   const cursorBorderRef = useRef(null);
 
-  const form = useRef(); // Create a ref for the form element
-  const [isSending, setIsSending] = useState(false); // State for loading indicator
-  const [sendSuccess, setSendSuccess] = useState(null); // State for success/error message
+  const form = useRef();
+  const [isSending, setIsSending] = useState(false); 
+  const [sendSuccess, setSendSuccess] = useState(null);
 
   useEffect(() => {
     const handleMouseMove = (e) => {
@@ -35,12 +36,12 @@ const Header = () => {
   }, []);
 
   const sendEmail = (e) => {
-    e.preventDefault(); // Prevent default form submission
+    e.preventDefault();
 
-    setIsSending(true); // Set sending state to true
-    setSendSuccess(null); // Clear previous messages
+    setIsSending(true);
+    setSendSuccess(null);
 
-    // Replace with your actual EmailJS Service ID, Template ID, and Public Key
+    // Email.js Keys
     const serviceId = "service_8hwgdcl";
     const templateId = "template_4qtj5xs";
     const publicKey = "ZC7WbftNbqWHfFlsR";
@@ -48,24 +49,31 @@ const Header = () => {
     emailjs.sendForm(serviceId, templateId, form.current, publicKey).then(
       (result) => {
         console.log("Email successfully sent!", result.text);
-        setSendSuccess(true); // Indicate success
-        setIsSending(false); // Reset sending state
-        form.current.reset(); // Clear form fields after successful submission
+        setSendSuccess(true); 
+        setIsSending(false); 
+        form.current.reset();
       },
       (error) => {
         console.error("Failed to send email:", error.text);
-        setSendSuccess(false); // Indicate failure
-        setIsSending(false); // Reset sending state
-        console.log(error.text)
+        setSendSuccess(false); 
+        setIsSending(false); 
+        console.log(error.text);
       }
     );
+  };
+
+  
+  const getPath = (item) => {
+    if (item === "Home") return "/";
+    if (item === "Technologies") return "/techstack";
+    return `/${item.toLowerCase()}`;
   };
 
   return (
     <>
       <header className="w-[80%] absolute mt-5 left-1/2 -translate-x-1/2 z-50 transition-all glass-effect duration-300">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16 md:h-20">
-          {/* Logo */}
+          {/* Logo - Führt zur Startseite */}
           <motion.div
             className="flex items-center"
             initial={{ opacity: 0, x: -100 }}
@@ -78,20 +86,21 @@ const Header = () => {
               duration: 1.2,
             }}
           >
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-r from-gray-500 to-gray-100 flex items-center justify-center text-purple-600 font-bold text-xl mr-3">
-              DK
-            </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-gray-300 to-gray-100 bg-clip-text text-transparent text-glow-purple">
-              Daniel Kurzer
-            </span>
+            <Link to="/" className="flex items-center"> {/* Fügen Sie hier den Link ein */}
+              <div className="h-10 w-10 rounded-xl bg-gradient-to-r from-gray-500 to-gray-100 flex items-center justify-center text-purple-600 font-bold text-xl mr-3">
+                DK
+              </div>
+              <span className="text-xl font-bold bg-gradient-to-r from-gray-300 to-gray-100 bg-clip-text text-transparent text-glow-purple">
+                Daniel Kurzer
+              </span>
+            </Link>
           </motion.div>
 
           {/* Desktop Nav */}
           <nav className="lg:flex hidden space-x-8">
             {["Home", "About", "Projects", "Experience", "Technologies", "Contact"].map(
               (item, index) => (
-                <motion.a
-                  href={`#${item.toLowerCase()}`}
+                <motion.div
                   key={item}
                   initial={{ opacity: 0, y: -20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -101,11 +110,16 @@ const Header = () => {
                     damping: 20,
                     delay: 0.7 + index * 0.2,
                   }}
-                  className="relative text-gray-800 dark:text-gray-200 hover:text-violet-600 dark:hover:text-violet-300 font-medium transition-colors duration-300 group"
                 >
-                  {item}
-                  <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-violet-600 group-hover:w-full transition-all duration-300"></span>
-                </motion.a>
+                  {/* Ändere <a> zu <Link> */}
+                  <Link
+                    to={getPath(item)} // Verwende die getPath Funktion
+                    className="relative text-gray-800 dark:text-gray-200 hover:text-violet-600 dark:hover:text-violet-300 font-medium transition-colors duration-300 group"
+                  >
+                    {item}
+                    <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-violet-600 group-hover:w-full transition-all duration-300"></span>
+                  </Link>
+                </motion.div>
               )
             )}
           </nav>
@@ -181,14 +195,15 @@ const Header = () => {
               <nav className="flex flex-col space-y-3">
                 {["Home", "About", "Projects", "Experience", "Technologies", "Contact"].map(
                   (item) => (
-                    <a
-                      onClick={() => setTimeout(() => toggleMenu(), 100)}
+                    // Ändere <a> zu <Link> und entferne href, nutze to
+                    <Link
+                      onClick={() => setTimeout(() => toggleMenu(), 100)} // Menü schließen nach Klick
                       className="text-gray-300 font-medium py-2"
                       key={item}
-                      href={`#${item.toLowerCase()}`}
+                      to={getPath(item)} // Verwende die getPath Funktion
                     >
                       {item}
-                    </a>
+                    </Link>
                   )
                 )}
               </nav>
@@ -232,7 +247,7 @@ const Header = () => {
         </AnimatePresence>
       </header>
 
-      {/* Contact Form Modal */}
+      {/* Contact Form Modal (Bleibt unverändert) */}
       <AnimatePresence>
         {contactFormOpen && (
           <motion.div

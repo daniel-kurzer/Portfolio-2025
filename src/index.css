@@ -6,7 +6,6 @@
 @tailwind utilities;
 
 html {
-  scroll-behavior: smooth;
   cursor: none;
 }
 
@@ -20,7 +19,6 @@ body {
   position: relative;
   background-color: black;
   color: white;
-  scroll-behavior: smooth;
 }
 
 a,
@@ -43,9 +41,12 @@ section {
   height: 100vh;
 }
 
+/* REMOVED: .pin-spacer rule. GSAP manages this dynamically. */
+/*
 .pin-spacer {
   height: 200vh;
 }
+*/
 
 .text-glow-purple {
   color: white;

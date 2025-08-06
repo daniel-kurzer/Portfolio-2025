@@ -5,74 +5,168 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 const AboutSection = () => {
   const sectionRef = useRef(null);
   const titleRef = useRef(null);
+  const titleLineRef = useRef(null);
   const introRef = useRef(null);
   const starsRef = useRef([]);
+
+  // NEU: useRef für die Sammlung aller GSAP-Tween/ScrollTrigger-Instanzen dieser Komponente
+  const createdTriggersRef = useRef([]);
 
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
 
-    const sectionNode = sectionRef.current;
+    let animationInitTimeoutId; // Zum Speichern des Initialisierungs-Timeouts
+    let cleanupTimeoutId; // Für den Cleanup-Timeout
 
-    // Title Animation
-    gsap.fromTo(
-      titleRef.current,
-      { y: 100, opacity: 0 },
-      {
-        y: 0,
-        opacity: 1,
-        duration: 0.8,
-        scrollTrigger: {
-          trigger: sectionNode,
-          start: "top 40%",
-          toggleActions: "play none none reverse",
-        },
+    // Erstelle Kopien der Ref-Werte, die innerhalb des Effekts konstant bleiben
+    const currentSectionNode = sectionRef.current;
+    const currentTitleNode = titleRef.current;
+    const currentTitleLineNode = titleLineRef.current;
+    const currentIntroNode = introRef.current;
+    const currentStars = starsRef.current; // Kopie des Arrays von Refs
+
+    // Funktion zur Initialisierung der GSAP-Animationen
+    const initializeGsapAnimation = () => {
+      // Sicherstellen, dass die Haupt-Refs existieren
+      if (!currentSectionNode || !currentTitleNode || !currentTitleLineNode || !currentIntroNode) {
+        console.warn("AboutSection: Einige DOM-Refs fehlen. GSAP-Initialisierung übersprungen.");
+        return;
       }
-    );
 
-    // Intro Animation
-    gsap.fromTo(
-      introRef.current,
-      { y: 100, opacity: 0, filter: "blur(10px)" },
-      {
-        y: 0,
-        opacity: 1,
-        filter: "blur(0px)",
-        duration: 1.5,
-        scrollTrigger: {
-          trigger: sectionNode,
-          start: "top 40%",
-          toggleActions: "play none none reverse",
-        },
+      // Vermeiden Sie die Re-Initialisierung, wenn bereits Instanzen existieren und aktiv sind
+      // Wir prüfen createdTriggersRef.current.length, da es im StrictMode geleert wird.
+      if (createdTriggersRef.current.length > 0 && createdTriggersRef.current[0].isActive) {
+        console.log("AboutSection: ScrollTriggers bereits initialisiert und aktiv, überspringe Re-Initialisierung.");
+        return;
       }
-    );
 
-    // Stars Animation
-    starsRef.current.forEach((star, index) => {
-      const direction = index % 2 === 0 ? 1 : -1;
-      const speed = 0.5 + Math.random() * 0.5;
+      console.log("AboutSection: Starte GSAP-Animation Initialisierung.");
 
-      gsap.to(star, {
-        x: `${direction * (100 + index * 20)}`,
-        y: `${direction * -50 - index * 10}`,
-        rotation: direction * 360,
-        ease: "none",
-        scrollTrigger: {
-          trigger: sectionNode,
-          start: "top bottom",
-          end: "bottom top",
-          scrub: speed,
-        },
-      });
-    });
+      // Leere das Array der erstellten Trigger bei jedem neuen Effekt-Lauf (wichtig für StrictMode)
+      createdTriggersRef.current = [];
 
-    return () => {
-      ScrollTrigger.getAll().forEach((trigger) => {
-        if (trigger.vars.trigger === sectionNode) {
-          trigger.kill();
-        }
-      });
+      // Title Animation
+      createdTriggersRef.current.push(
+        gsap.fromTo(
+          currentTitleNode,
+          { y: 100, opacity: 0 },
+          {
+            y: 0,
+            opacity: 1,
+            duration: 0.8,
+            scrollTrigger: {
+              trigger: currentSectionNode,
+              start: "top 70%",
+              end: "bottom top", // Behält den Endpunkt bei
+              toggleActions: "play none none reverse",
+            },
+          }
+        )
+      );
+
+      createdTriggersRef.current.push(
+        gsap.fromTo(
+          currentTitleLineNode,
+          { width: "0%", opacity: 0 },
+          {
+            width: "100%",
+            opacity: 1,
+            duration: 1.5,
+            ease: "power3.inOut",
+            delay: 0.3,
+            scrollTrigger: {
+              trigger: currentSectionNode,
+              start: "top 80%",
+              toggleActions: "play none none reverse",
+            },
+          }
+        )
+      );
+
+      // Intro Animation
+      createdTriggersRef.current.push(
+        gsap.fromTo(
+          currentIntroNode,
+          { y: 100, opacity: 0, filter: "blur(10px)" },
+          {
+            y: 0,
+            opacity: 1,
+            filter: "blur(0px)",
+            duration: 1.5,
+            scrollTrigger: {
+              trigger: currentSectionNode,
+              start: "top 60%",
+              end: "bottom top", // Behält den Endpunkt bei
+              toggleActions: "play none none reverse",
+            },
+          }
+        )
+      );
+
+      // Stars Animation
+      if (currentStars.length > 0) {
+        currentStars.forEach((star, index) => {
+          const direction = index % 2 === 0 ? 1 : -1;
+          const speed = 0.5 + Math.random() * 0.5;
+
+          createdTriggersRef.current.push(
+            gsap.to(star, {
+              x: `${direction * (100 + index * 20)}`,
+              y: `${direction * -50 - index * 10}`,
+              rotation: direction * 360,
+              ease: "none",
+              scrollTrigger: {
+                trigger: currentSectionNode, // Trigger ist die Sektion, nicht der Stern selbst
+                start: "top bottom",
+                end: "bottom top",
+                scrub: speed,
+              },
+            })
+          );
+        });
+      }
+
+      // Scroll Trigger refresh for Image-load
+      const image = currentSectionNode.querySelector('img[alt="Profile-Image"]');
+      if (image && !image.complete) {
+        image.onload = () => ScrollTrigger.refresh();
+      } else {
+        ScrollTrigger.refresh();
+      }
     };
-  }, []);
+
+    // Initialisiere die Animation verzögert
+    animationInitTimeoutId = setTimeout(initializeGsapAnimation, 200);
+
+    // Cleanup-Funktion
+    return () => {
+      console.log("--- AboutSection Cleanup START ---");
+      console.log("AboutSection: Anzahl der zu killenden Trigger:", createdTriggersRef.current.length);
+
+      clearTimeout(animationInitTimeoutId); // Den Initialisierungs-Timeout clearen
+
+      cleanupTimeoutId = setTimeout(() => {
+        createdTriggersRef.current.forEach((tween) => {
+          if (tween) { // Sicherstellen, dass der Tween existiert
+            if (tween.scrollTrigger) { // Prüfen, ob ein assoziierter ScrollTrigger existiert
+              console.log("AboutSection: Killing specific ScrollTrigger associated with tween:", tween.scrollTrigger);
+              // In AboutSection gibt es kein Pinning, daher kein disable(true)
+              tween.scrollTrigger.kill(); 
+            }
+            // Dann killen wir den Tween selbst
+            tween.kill(); 
+          } else {
+            console.log("AboutSection: Tween ist null, überspringe Kill.");
+          }
+        });
+        createdTriggersRef.current = []; // Array leeren
+        // ScrollTrigger.refresh(); // ENTFERNT: Dies könnte die Race Condition verschärfen
+        console.log("--- AboutSection Cleanup ENDE --- (nach Timeout)");
+      }, 200); // Timeout von 200ms beibehalten
+
+      return () => clearTimeout(cleanupTimeoutId); // Cleanup-Timeout clearen
+    };
+  }, []); // Leeres Dependency Array
 
   const addToStars = (el) => {
     if (el && !starsRef.current.includes(el)) {
@@ -84,9 +178,9 @@ const AboutSection = () => {
     <section
       ref={sectionRef}
       id="about"
-      className="h-screen relative overflow-hidden bg-gradient-to-b from-black to-[#9a74cf50] flex flex-col justify-center items-center z-10 pt-16 md:pt-24"
+      className="relative overflow-hidden bg-gradient-to-b from-violet-900 to-black flex flex-col z-10 min-h-screen pt-24 pb-24"
     >
-      <div className="absolute inset-0 overflow-hidden">
+      <div className="absolute inset-0 overflow-hidden"> 
         {/* STARS ANIMATION */}
         {[...Array(7)].map((_, i) => (
           <div
@@ -110,18 +204,28 @@ const AboutSection = () => {
         ))}
       </div>
 
-      <div className="container mx-auto px-4 h-full flex flex-col items-center justify-center relative z-10">
-        <h1
-          ref={titleRef}
-          className="text-4xl md:text-6xl font-bold mt-8 lg:mt-0 mb-8 md:mb-16 text-center text-purple-200 opacity-0"
-        >
-          About me
-        </h1>
+      {/* Haupt-Inhaltscontainer der About-Sektion */}
+      <div className="container mx-auto px-4 flex flex-col items-center relative z-10 flex-grow">
+        {/* Titel-Wrapper - für besseres Padding/Margin Management des Titels */}
+        <div className="w-full flex flex-col items-center mb-8 md:mb-16">
+          <h1
+            ref={titleRef}
+            className="text-4xl md:text-6xl font-bold mt-16 lg:mt-8 mb-4 text-center text-purple-200 opacity-0"
+          >
+            About me
+          </h1>
+          <div
+            ref={titleLineRef}
+            className="w-0 h-1 bg-gradient-to-r from-purple-500 to-pink-500 mx-auto opacity-0"
+          ></div>
+        </div>
 
+        {/* Intro-Text und Bild Container */}
         <div
           ref={introRef}
           className="w-full flex md:flex-row flex-col justify-between lg:px-24 px-5 items-center text-center opacity-0 mt-4 md:mt-0"
         >
+          {/* Text-Spalte */}
           <div className="text-sm md:text-2xl font-bold text-purple-200 z-50 lg:max-w-[45rem] max-w-[27rem] tracking-wider mb-8 md:mb-0">
             <span className="block w-full text-center hero-font uppercase text-purple-200/60">
               From hands-on craftsmanship <br /> to the world of code,
@@ -143,8 +247,9 @@ const AboutSection = () => {
               professional web projects.
             </p>
           </div>
+          {/* Bild-Spalte */}
           <img
-            className="lg:h-[40rem] md:h-[25rem] h-[20rem] lg:translate-y-7 translate-y-[-35px]"
+            className="lg:h-[40rem] md:h-[25rem] h-[20rem]"
             src="images/DK-RB-1.png"
             alt="Profile-Image"
           />
